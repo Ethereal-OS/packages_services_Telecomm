@@ -453,7 +453,7 @@ public class TelecomServiceImplTest extends TelecomTestCase {
             add(SIP_PA_HANDLE_17);
         }};
         when(mFakePhoneAccountRegistrar
-                .getAllPhoneAccountHandlesForPackage(any(UserHandle.class), anyString()))
+                .getPhoneAccountsForPackage(anyString(), any(UserHandle.class)))
                 .thenReturn(phoneAccountHandleList);
         makeAccountsVisibleToAllUsers(TEL_PA_HANDLE_16, SIP_PA_HANDLE_17);
         assertEquals(phoneAccountHandleList,

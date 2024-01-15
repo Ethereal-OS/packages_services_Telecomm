@@ -375,5 +375,5 @@ public class CallRedirectionProcessorTest extends TelecomTestCase {
         // Verify service was unbound
         verify(mContext, times(1)).
                 unbindService(any(ServiceConnection.class));
-    }    
+    }
 }

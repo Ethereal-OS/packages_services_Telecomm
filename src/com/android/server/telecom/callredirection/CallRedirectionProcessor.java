@@ -174,7 +174,7 @@ public class CallRedirectionProcessor implements CallRedirectionCallback {
                 } finally {
                     Log.endSession();
                 }
-            }            
+            }
         }
 
         private class CallRedirectionAdapter extends ICallRedirectionAdapter.Stub {

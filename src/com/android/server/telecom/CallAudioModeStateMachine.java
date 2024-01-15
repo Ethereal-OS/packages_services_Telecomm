@@ -19,16 +19,10 @@ package com.android.server.telecom;
 import android.media.AudioManager;
 import android.os.Looper;
 import android.os.Message;
-import android.os.SystemProperties;
 import android.telecom.Log;
 import android.telecom.Logging.Runnable;
 import android.telecom.Logging.Session;
 import android.util.LocalLog;
-import android.telecom.PhoneAccount;
-import android.telecom.PhoneAccountHandle;
-import android.telecom.TelecomManager;
-import android.telephony.SubscriptionManager;
-import android.telephony.TelephonyManager;
 import android.util.SparseArray;
 
 import com.android.internal.util.IState;
@@ -44,8 +38,8 @@ public class CallAudioModeStateMachine extends StateMachine {
     private LocalLog mLocalLog = new LocalLog(20);
     public static class Factory {
         public CallAudioModeStateMachine create(SystemStateHelper systemStateHelper,
-                AudioManager am, TelecomManager tm) {
-            return new CallAudioModeStateMachine(systemStateHelper, am, tm);
+                AudioManager am) {
+            return new CallAudioModeStateMachine(systemStateHelper, am);
         }
     }
 
@@ -477,36 +471,8 @@ public class CallAudioModeStateMachine extends StateMachine {
         public void enter() {
             Log.i(LOG_TAG, "Audio focus entering SIM CALL state");
             mLocalLog.log("Enter SIM_CALL");
-            boolean setMsimAudioParams = SystemProperties
-                    .getBoolean("ro.multisim.set_audio_params", false);
-            Call call = mCallAudioManager.getForegroundCall();
-
             mAudioManager.requestAudioFocusForCall(AudioManager.STREAM_VOICE_CALL,
                     AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
-
-            if (setMsimAudioParams && call != null && call.getTargetPhoneAccount() != null) {
-                PhoneAccountHandle handle = call.getTargetPhoneAccount();
-                PhoneAccount account = mTelecomManager.getPhoneAccount(handle);
-                TelephonyManager tm = TelephonyManager.getDefault();
-                boolean audioFollowDefaultSim = SystemProperties
-                        .getBoolean("ro.multisim.audio_follow_default_sim", true);
-                int subId = tm.getSubIdForPhoneAccount(account);
-                int phoneId = SubscriptionManager.getPhoneId(subId);
-
-                if (audioFollowDefaultSim ||
-                        tm.getSimState(0) != TelephonyManager.SIM_STATE_READY) {
-                    int defaultDataSubId = SubscriptionManager.getDefaultDataSubscriptionId();
-                    phoneId ^= SubscriptionManager.getPhoneId(defaultDataSubId);
-                }
-
-                Log.d(LOG_TAG, "setAudioParameters phoneId=" + phoneId);
-                if (phoneId == 0) {
-                    mAudioManager.setParameters("phone_type=cp1");
-                } else if (phoneId == 1) {
-                    mAudioManager.setParameters("phone_type=cp2");
-                }
-            }
-
             mAudioManager.setMode(AudioManager.MODE_IN_CALL);
             mLocalLog.log("Mode MODE_IN_CALL");
             mMostRecentMode = AudioManager.MODE_IN_CALL;
@@ -738,18 +704,16 @@ public class CallAudioModeStateMachine extends StateMachine {
 
     private final AudioManager mAudioManager;
     private final SystemStateHelper mSystemStateHelper;
-    private final TelecomManager mTelecomManager;
     private CallAudioManager mCallAudioManager;
 
     private int mMostRecentMode;
     private boolean mIsInitialized = false;
 
     public CallAudioModeStateMachine(SystemStateHelper systemStateHelper,
-            AudioManager audioManager, TelecomManager telecomManager) {
+            AudioManager audioManager) {
         super(CallAudioModeStateMachine.class.getSimpleName());
         mAudioManager = audioManager;
         mSystemStateHelper = systemStateHelper;
-        mTelecomManager = telecomManager;
         mMostRecentMode = AudioManager.MODE_NORMAL;
 
         createStates();
@@ -759,11 +723,10 @@ public class CallAudioModeStateMachine extends StateMachine {
      * Used for testing
      */
     public CallAudioModeStateMachine(SystemStateHelper systemStateHelper,
-            AudioManager audioManager, TelecomManager telecomManager, Looper looper) {
+            AudioManager audioManager, Looper looper) {
         super(CallAudioModeStateMachine.class.getSimpleName(), looper);
         mAudioManager = audioManager;
         mSystemStateHelper = systemStateHelper;
-        mTelecomManager = telecomManager;
         mMostRecentMode = AudioManager.MODE_NORMAL;
 
         createStates();
