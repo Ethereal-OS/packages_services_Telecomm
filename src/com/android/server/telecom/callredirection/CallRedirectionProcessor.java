@@ -115,8 +115,12 @@ public class CallRedirectionProcessor implements CallRedirectionCallback {
                 || ((mServiceType.equals(SERVICE_TYPE_USER_DEFINED))
                     && mIsUserDefinedRedirectionPending)) {
                 if (mConnection != null) {
+                try {
                     // We still need to call unbind even if the service disconnected.
                     mContext.unbindService(mConnection);
+                } catch (IllegalArgumentException e) {
+                    Log.e(this, e, "Error unbinding the connection");
+                }
                     mConnection = null;
                 }
                 mService = null;
